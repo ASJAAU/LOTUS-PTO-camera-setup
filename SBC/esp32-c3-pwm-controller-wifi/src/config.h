@@ -6,8 +6,8 @@
 // Basic configuration values for the project. Replace these with your
 // network credentials and any platform-specific constants.
 namespace Config {
-  static const char* WIFI_SSID = "Installation02";
-  static const char* WIFI_PASS = "SmartHome117";
+  static const char* WIFI_SSID = "************";
+  static const char* WIFI_PASS = "************";
   constexpr uint16_t SERVER_PORT = 5000;
   constexpr uint8_t PWM_PIN_CH1 = 0; // GPIO pin for PWM channel 1
   constexpr uint8_t PWM_PIN_CH2 = 1; // GPIO pin for PWM channel 2
