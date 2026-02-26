@@ -5,10 +5,6 @@
 #include <WiFi.h>
 #include "config.h"
 
-/**
- * Simple TCP server wrapper that implements the 4-byte big-endian
- * length-prefix framing used by the protocol.
- */
 class TcpServer {
 public:
   explicit TcpServer(uint16_t port = Config::SERVER_PORT);

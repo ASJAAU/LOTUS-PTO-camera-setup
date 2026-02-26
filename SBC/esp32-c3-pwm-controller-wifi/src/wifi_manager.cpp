@@ -10,8 +10,7 @@ void WiFiManager::begin() {
   // Try to connect for a short period; if initial connect fails,
   // return and let loop() handle retries so device startup doesn't block.
   unsigned long start = millis();
-  const unsigned long INIT_TIMEOUT_MS = 10000;
-  while (WiFi.status() != WL_CONNECTED && (millis() - start) < INIT_TIMEOUT_MS) {
+  while (WiFi.status() != WL_CONNECTED && (millis() - start) < Config::TIMEOUT_MS) {
     delay(500);
     Serial.print('.');
   }
@@ -25,12 +24,9 @@ void WiFiManager::begin() {
 
 void WiFiManager::loop() {
   static unsigned long lastAttempt = 0;
-  const unsigned long RECONNECT_INTERVAL_MS = 5000;
-
   if (WiFi.status() == WL_CONNECTED) return;
-
   unsigned long now = millis();
-  if (now - lastAttempt < RECONNECT_INTERVAL_MS) return;
+  if (now - lastAttempt < Config::TIMEOUT_MS) return;
   lastAttempt = now;
 
   Serial.println("WiFi disconnected — attempting reconnect");
