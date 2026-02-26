@@ -6,8 +6,12 @@ import time
 from typing import Optional, Callable
 
 def on_message(msg):
-    print("Received:", msg)
-    
+    # TO BE IMPLEMENTED
+    # Placeholder prints mesages into the terminal
+    on_message_print(msg)
+
+def on_message_print(msg):
+    print("Recieved: ", msg)    
 class SBC:
     def __init__(self, ip, port, timeout=5, buffer_size=1024, reconnect_interval=5, heartbeat_interval=10, log_level=1, name="NA", verbose=False) -> None:
         self.name = name
@@ -178,39 +182,3 @@ class SBC:
         if self._socket:
             self._socket.close()
         self.connect()
-
-
-if __name__ == "__main__":
-    sbc = SBC("192.168.2.86", 5000, verbose=True)
-    sbc.set_logger_callback(on_message)
-    try:
-        print("Connecting to SBC...")
-        sbc.connect()
-        print("Connected. Enter JSON messages to send. Type 'quit' or Ctrl-C to exit.")
-
-        while True:
-            try:
-                line = input("> ").strip()
-            except EOFError:
-                break
-
-            if not line:
-                continue
-            if line.lower() in ("quit", "exit"):
-                break
-
-            try:
-                payload = json.loads(line)
-            except json.JSONDecodeError as e:
-                print(f"Invalid JSON: {e}")
-                continue
-
-            try:
-                sbc.send(payload)
-                print("Sent")
-            except Exception as e:
-                print(f"Send failed: {e}")
-    except KeyboardInterrupt:
-        print("\nInterrupted by user")
-    finally:
-        sbc.disconnect()
