@@ -163,11 +163,8 @@ void MessageHandler::handle(const String &payload, WiFiClient &client, WiFiManag
         bool handled = false;
         for (ResourceProvider *p : _providers)
         {
-            if (p->handleCmd(cmd, params, reply))
-            {
-                handled = true;
-                break;
-            }
+            //break; // We dont break in case several modules share command name (i.e. compounded module commands)
+            if (p->handleCmd(cmd, params, reply)){handled = true;}
         }
 
         if (!handled)

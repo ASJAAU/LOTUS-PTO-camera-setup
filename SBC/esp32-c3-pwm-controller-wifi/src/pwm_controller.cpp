@@ -3,32 +3,32 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 
-// Map channels 1..3 to ledc channels 0..2
-static const uint8_t LEDC_CHANNEL_MAP[4] = {0, 0, 1, 2 };
-
+// Map logical channels 0..2 to ledc channels 0..2 (0-based indexing)
+static const uint8_t LED_NUM_CHANNELS = 3;
+static const uint8_t LED_CHANNEL_PINS[LED_NUM_CHANNELS] = {
+  Config::PWM_PIN_1, 
+  Config::PWM_PIN_2, 
+  Config::PWM_PIN_3};
+static const uint8_t WIPER_CHANNEL = LED_NUM_CHANNELS; // Make sure it is allways the next channel after LED channels
 
 // ##################################################################################
 // ##                           CONTEROLLER DEFINITION                             ##
 // ##################################################################################
 void PwmController::begin() {
-  // Configure ledc timers and attach pins
-  for (uint8_t ch = 1; ch <= 3; ++ch) {
-    uint8_t ledcChannel = LEDC_CHANNEL_MAP[ch];
-    // ledcSetup(channel, freq, resolution)
-    ledcSetup(ledcChannel, Config::PWM_FREQUENCY, Config::PWM_RESOLUTION);
+  // Lights Attach pins to channels (i.e. Logic channels to pins)
+  for (uint8_t ch = 0; ch < NUM_CHANNELS; ++ch) {
+    ledcSetup(ch, Config::LED_PWM_FREQUENCY, Config::LED_PWM_RESOLUTION);
+    ledcAttachPin(LED_CHANNEL_PINS[i], i); // Assign the channel to pin in accordance with the LED_CHANNEL_PINS sequence
   }
-
-  // Attach pins to channels
-  ledcAttachPin(Config::PWM_PIN_CH1, LEDC_CHANNEL_MAP[1]);
-  ledcAttachPin(Config::PWM_PIN_CH2, LEDC_CHANNEL_MAP[2]);
-  ledcAttachPin(Config::PWM_PIN_CH3, LEDC_CHANNEL_MAP[3]);
+  // Attach wiper pins to channels
+  ledcSetup(WIPER_CHANEL, Config::WIPER_PWM_FREQUENCY, Config::WIPER_PWM_RESOLUTION)
 
   // Initialize outputs to 0
   setAll(0);
 }
 
 void PwmController::setChannel(uint8_t ch, uint8_t value) {
-  if (ch < 1 || ch > 3) return;
+  if (ch > LED_NUM_CHANNELS) return;// We allow ch to be == LED_NUM_CHANNELS as it links to WIPER_CHANNEL
   channels[ch] = value;
   uint8_t ledcChannel = LEDC_CHANNEL_MAP[ch];
   ledcWrite(ledcChannel, value);
@@ -36,31 +36,42 @@ void PwmController::setChannel(uint8_t ch, uint8_t value) {
 }
 
 uint8_t PwmController::getChannel(uint8_t ch) const {
-  if (ch < 1 || ch > 3) return 0;
+  if (ch > LED_NUM_CHANNELS) return 0; // We allow ch to be == LED_NUM_CHANNELS as it links to WIPER_CHANNEL
   return channels[ch];
 }
 
 void PwmController::setAll(uint8_t value) {
-  for (uint8_t i = 1; i <= 3; ++i) {
+  for (uint8_t i = 0; i < LED_NUM_CHANNELS; ++i) {
     setChannel(i, value);
   }
+  setChannel(WIPER_CHANNEL, value)
 }
 
-void PwmController::pwmTest() {
-  uint8_t max_val = Config::PWM_RESOLUTION^2 - 1;
+void PwmController::lightTest() {
+  int max_val = (1 << Config::PWM_RESOLUTION) - 1;
   for (int v = 0; v <= max_val; ++v) {
-    setAll(v);
+    setAll((uint8_t)v);
     delay(10);
   }
 }
 
-void PwmController::pwmOff() {
-  setAll(0);
+void PwmController::lightOff() {
+  for (uint8_t ch = 0; ch < LED_NUM_CHANNELS; ++ch) {setChannel(ch, 0)
+  }
 }
 
-void PwmController::pwmOn() {
-  uint8_t max_val = Config::PWM_RESOLUTION^2 - 1;
-  setAll(uint8_t(max_val/2));
+void PwmController::lightOn() {
+  for (uint8_t ch = 0; ch < LED_NUM_CHANNELS; ++ch) {setChannel(ch, 128)
+  }
+}
+
+void PwmController::wipe(){
+  //Implement wiping feature
+  setChannel(WIPER_CHANNEL, 128) // Wipe to left
+  delay(1000) // Wait wait
+  setChannel(WIPER_CHANNEL, 128) // Wipe to the right
+  delay(1000) // Wait wait
+  setChannel(WIPER_CHANNEL, 0) // Stop wiping real smooth
 }
 
 // ##################################################################################
@@ -71,83 +82,114 @@ PwmProvider::PwmProvider(PwmController& pwm)
   : _pwm(pwm) {}
 
 bool PwmProvider::matchesKey(const char* key) const {
-  return (strncmp(key, "pwm", 3) == 0);
+  bool is_light = (strncmp(key, "light", 5) == 0);
+  bool is_wiper = (strcmp(key, "wiper") == 0);
+  return is_light || is_wiper;
 }
 
 bool PwmProvider::handleSet(const char* key, const JsonVariant& value, JsonDocument& reply) {
-  // Support both "pwm" and "pwm.N"
-  if (strncmp(key, "pwm.", 4) == 0) {
-    int ch = atoi(key + 4);
-    if (ch >= 1 && ch <= 3 && value.is<int>()) {
+  // Support both "light" and "light.N"
+  if (strncmp(key, "light.", 6) == 0) {
+    int ch = atoi(key + 6);
+    if (ch < LED_NUM_CHANNELS && value.is<int>()) {
       int v = value.as<int>();
-      if (v < 0) v = 0;
-      if (v > 255) v = 255;
+      if (v < 0) v = 0; //Floor
+      if (v > 255) v = 255; //Ceil
       _pwm.setChannel((uint8_t)ch, (uint8_t)v);
       reply["success"] = true;
-      reply["result"] = String("pwm.") + String(ch) + " set";
+      reply["result"] = String("light.") + String(ch) + " set";
       return true;
     }
     reply["success"] = false;
-    reply["error"] = "invalid pwm channel or value";
+    reply["error"] = "invalid light channel or value";
     reply["value"] = key;
     return true; // handled (but invalid)
   }
-
-  if (strcmp(key, "pwm") == 0 && value.is<int>()) {
+  
+  if (strcmp(key, "light") == 0 && value.is<int>()) {
     int v = value.as<int>();
-    if (v < 0) v = 0;
-    if (v > 255) v = 255;
-    _pwm.setAll((uint8_t)v);
+    if (v < 0) v = 0; //Floor
+    if (v > 255) v = 255; //Ceil
+    for (uint8_t ch = 0; ch < LED_NUM_CHANNELS; ++ch) {_pwm.setChannel(ch, v)}
     reply["success"] = true;
-    reply["result"] = "all pwm channels set";
+    reply["result"] = "all light channels set";
     return true;
   }
 
+  if (strcmp(key, "wiper") == 0 && value.is<int>()) {
+    int v = value.as<int>();
+    if (v < 0) v = 0;
+    if (v > 255) v = 255;
+    _pwm.setChannel(WIPER_CHANNEL)
+    reply["success"] = true;
+    reply["result"] = "all light channels set";
+    return true;
+  }
   return false;
 }
 
 bool PwmProvider::handleGet(const char* key, JsonDocument& reply) {
-  if (strncmp(key, "pwm.", 4) == 0) {
-    int ch = atoi(key + 4);
-    if (ch >= 1 && ch <= 3) {
+  if (strncmp(key, "light.", 6) == 0) {
+    int ch = atoi(key + 6);
+    if (ch >= 1 && ch < (int)LED_NUM_CHANNELS) {
+      // convert 1-based key to 0-based index
       reply["success"] = true;
       reply["value"] = _pwm.getChannel((uint8_t)ch);
       return true;
     }
+  }
+  
+  if (strcmp(key, "light") == 0) {
+    reply["success"] = true;
+    reply["key"] = key;
+    uint8_t values[LED_NUM_CHANNELS];
+    for (uint8_t i = 0; i < LED_NUM_CHANNELS; ++i) {
+      values[i] = _pwm.getChannel(i);
+    }
+    reply["value"] = values;
+    return true;
+  }
+  
+  if (strcmp(key, "wiper") == 0) {
+      reply["success"] = true;
+      reply["key"] = key;
+      reply["value"] = _pwm.getChannel(WIPER_CHANNEL);
+      return true;
+    }
+
+
     reply["success"] = false;
     reply["error"] = "unknown get key";
     reply["value"] = key;
-    return true;
-  }
-
-  if (strcmp(key, "pwm") == 0) {
-    reply["success"] = true;
-    reply["value"] = _pwm.getChannel(1);
-    return true;
-  }
-
-  return false;
+    return false;
 }
 
 bool PwmProvider::handleCmd(const char* cmd, const JsonVariant& params, JsonDocument& reply) {
-  if (strcmp(cmd, "pwmTest") == 0) {
-    _pwm.pwmTest();
+  if (strcmp(cmd, "lightTest") == 0) {
+    _light.lightTest();
     reply["success"] = true;
-    reply["result"] = "pwmTest started";
+    reply["result"] = "light Test started";
     return true;
   }
 
-  if (strcmp(cmd, "pwmOff") == 0) {
-    _pwm.pwmOff();
+  if (strcmp(cmd, "lightOff") == 0) {
+    _pwm.lightOff();
     reply["success"] = true;
-    reply["result"] = "all pwm off";
+    reply["result"] = "all lights off";
     return true;
   }
 
-  if (strcmp(cmd, "pwmOn") == 0) {
-    _pwm.pwmOn();
+  if (strcmp(cmd, "lightOn") == 0) {
+    _pwm.lightOn();
     reply["success"] = true;
-    reply["result"] = "all pwm on (half brightness)";
+    reply["result"] = "all lights on (half brightness)";
+    return true;
+  }
+
+  if (strcmp(cmd, "wipe") == 0) {
+    _pwm.wipe();
+    reply["success"] = true;
+    reply["result"] = "Performing 1x wipe";
     return true;
   }
 

@@ -32,7 +32,7 @@ void setup() {
 }
 
 void loop() {
-  digitalWrite(Config::LED_PIN, HIGH); // Turn debug light on
+  digitalWrite(Config::ONBOARD_LED_PIN, HIGH); // Turn debug light on
 
   wifi.loop(); // Check connection and attempt reconnect if disconnected
   
@@ -49,7 +49,7 @@ void loop() {
     msgHandler.handle(payload, client, wifi);
   }
 
-  digitalWrite(Config::LED_PIN, LOW); // Turn debug light off
+  digitalWrite(Config::ONBOARD_LED_PIN, LOW); // Turn debug light off
 
   // slow down cpu by 1 ms to reduce load
   delay(1);

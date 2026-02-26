@@ -12,9 +12,10 @@ public:
   void setChannel(uint8_t ch, uint8_t value);
   uint8_t getChannel(uint8_t ch) const;
   void setAll(uint8_t value);
-  void pwmTest();
-  void pwmOff();
-  void pwmOn();
+  void lightTest();
+  void lightOff();
+  void lightOn();
+  void wipe();
 
 private:
   uint8_t channels[3] = {0, 0, 0};
