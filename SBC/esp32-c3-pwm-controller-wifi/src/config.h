@@ -10,7 +10,7 @@ namespace Config {
   static const char* WIFI_SSID = "************";
   static const char* WIFI_PASS = "************";
   constexpr uint16_t SERVER_PORT = 5000;
-  const uint8_t TIMEOUT_MS = 100000; // connection/reconnection timeout for clients
+  const int TIMEOUT_MS = 100000; // connection/reconnection timeout for clients
   
   // LED PWM setup
   constexpr uint32_t LED_PWM_FREQUENCY = 5000; // Hz
