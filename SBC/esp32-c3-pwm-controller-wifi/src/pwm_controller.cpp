@@ -64,6 +64,7 @@ void PwmController::setAll(uint8_t value) {
 
 void PwmController::lightTest() {
   int max_val = (1 << Config::LED_PWM_RESOLUTION) - 1;
+  int max_val = (1 << Config::LED_PWM_RESOLUTION) - 1;
   for (int v = 0; v <= max_val; ++v) {
     setAll((uint8_t)v);
     delay(10);
@@ -160,6 +161,7 @@ bool PwmProvider::handleSet(const char* key, const JsonVariant& value, JsonDocum
 }
 
 bool PwmProvider::handleGet(const char* key, JsonDocument& reply) {
+  // Retrieve specific LED value
   if (strncmp(key, "light.", 6) == 0) {
     int i = atoi(key + 6);
     if (i >= 1 && i < NUM_LEDS) {
@@ -170,6 +172,7 @@ bool PwmProvider::handleGet(const char* key, JsonDocument& reply) {
     }
   }
   
+  // Retrieve all led values
   if (strcmp(key, "light") == 0) {
     reply["success"] = true;
     reply["key"] = key;
@@ -179,6 +182,7 @@ bool PwmProvider::handleGet(const char* key, JsonDocument& reply) {
     return true;
   }
   
+  // Retrieve wiper stepper value
   if (strcmp(key, "wiper") == 0) {
       reply["success"] = true;
       reply["key"] = key;
@@ -195,6 +199,7 @@ bool PwmProvider::handleGet(const char* key, JsonDocument& reply) {
 
 bool PwmProvider::handleCmd(const char* cmd, const JsonVariant& params, JsonDocument& reply) {
   if (strcmp(cmd, "lightTest") == 0) {
+    _pwm.lightTest();
     _pwm.lightTest();
     reply["success"] = true;
     reply["result"] = "light Test started";
