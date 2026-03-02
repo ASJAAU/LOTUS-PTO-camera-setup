@@ -64,7 +64,6 @@ void PwmController::setAll(uint8_t value) {
 
 void PwmController::lightTest() {
   int max_val = (1 << Config::LED_PWM_RESOLUTION) - 1;
-  int max_val = (1 << Config::LED_PWM_RESOLUTION) - 1;
   for (int v = 0; v <= max_val; ++v) {
     setAll((uint8_t)v);
     delay(10);
@@ -158,6 +157,10 @@ bool PwmProvider::handleSet(const char* key, const JsonVariant& value, JsonDocum
     reply["result"] = "all wiper channels set";
     return true;
   }
+  reply["success"] = false;
+  reply["error"] = "unknown get key";
+  reply["value"] = key;
+  return false;
 }
 
 bool PwmProvider::handleGet(const char* key, JsonDocument& reply) {
@@ -191,10 +194,10 @@ bool PwmProvider::handleGet(const char* key, JsonDocument& reply) {
       return true;
     }
 
-    reply["success"] = false;
-    reply["error"] = "unknown get key";
-    reply["value"] = key;
-    return false;
+  reply["success"] = false;
+  reply["error"] = "unknown get key";
+  reply["value"] = key;
+  return false;
 }
 
 bool PwmProvider::handleCmd(const char* cmd, const JsonVariant& params, JsonDocument& reply) {
@@ -227,5 +230,8 @@ bool PwmProvider::handleCmd(const char* cmd, const JsonVariant& params, JsonDocu
     return true;
   }
 
+  reply["success"] = false;
+  reply["error"] = "unknown command";
+  reply["value"] = cmd;
   return false;
 }

@@ -19,11 +19,11 @@ namespace Config {
   constexpr uint8_t LED0_PIN = 20; //(IO01) GPIO pin used for light0 PWM
   constexpr uint8_t LED0_CHANNEL = 1; // PWM Generator channel for light0
   //Light1
-  constexpr uint8_t LED0_PIN = 21; //(IO04) GPIO pin used for light1 PWM
-  constexpr uint8_t LED0_CHANNEL = 2; // PWM Generator channel for light1
+  constexpr uint8_t LED1_PIN = 21; //(IO04) GPIO pin used for light1 PWM
+  constexpr uint8_t LED1_CHANNEL = 2; // PWM Generator channel for light1
   //Light2
-  constexpr uint8_t LED0_PIN = 22; //(IO05) GPIO pin used for light2 PWM
-  constexpr uint8_t LED0_CHANNEL = 3; // PWM Generator channel for light2
+  constexpr uint8_t LED2_PIN = 22; //(IO05) GPIO pin used for light2 PWM
+  constexpr uint8_t LED2_CHANNEL = 3; // PWM Generator channel for light2
 
   // WIPER PWM setup
   constexpr uint32_t WIPER_PWM_FREQUENCY = 5000; // Hz
