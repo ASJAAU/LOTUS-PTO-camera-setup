@@ -22,15 +22,9 @@ DEFAULT:
         auto_gain_lower_limit: 0
         auto_gain_upper_limit: 24
     light_config: &default_light_settings
-      light_1: 0.5 # Strength in percentage (0.0-1.0)
-      light_2: 0.5 # Strength in percentage (0.0-1.0)
-    sbc_config: &default_sbc_settings
-      light_1: #LEFT
-        pin: 17
-        min_sig: 0.05
-      light_2: #RIGHT
-        pin: 27
-        min_sig: 0.05
+      light.1: 128 # Strength in 8bit values (0-255)
+      light.2: 128 # Strength in 8bit values (0-255)
+      light.3: 128 # Strength in 8bit values (0-255
 
 # named hardware cofigurations for individiual rigs
 setups:
@@ -41,7 +35,6 @@ setups:
       settings: *default_camera_settings
     sbc:
       ip: 127.0.0.101
-      settings: *default_sbc_settings
     light:
       settings: *default_light_settings
   rig2:
@@ -51,7 +44,6 @@ setups:
       settings: *default_camera_settings
     sbc:
       ip: 192.168.10.102
-      settings: *default_sbc_settings
     light:
       settings: *default_light_settings
   rig3:
@@ -61,7 +53,6 @@ setups:
       settings: *default_camera_settings
     sbc:
       ip: 192.168.10.103
-      settings: *default_sbc_settings
     light:
       settings: *default_light_settings
 
@@ -82,9 +73,9 @@ camera_configs:
 light_configs:
   bright:
     <<: *default_light_settings
-    light_1: 1.0
-    light_2: 1.0
+    light_1: 255
+    light_2: 255
   dim: 
     <<: *default_light_settings
-    light_1: 0.15
-    light_2: 0.15
+    light_1: 80
+    light_2: 80
