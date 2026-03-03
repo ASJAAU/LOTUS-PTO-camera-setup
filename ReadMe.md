@@ -14,12 +14,12 @@ We use systemd for service calling and scheduling of the capturing process. That
 #### Initial Setup
 1. Copy service file into linux system
 ```
-mv ./systemd/device-trigger.service  /etc/systemd/system/device-trigger.service
+mv ./systemd/lotus-capture.service  /etc/systemd/system/device-trigger.service
 ```
 
 2. Copy timer file into linux system
 ```
-mv ./systemd/device-trigger.timer /etc/systemd/system/device-trigger.timer
+mv ./systemd/lotus-capture.timer /etc/systemd/system/device-trigger.timer
 ```
 
 3. Reboot daemon 
@@ -29,7 +29,7 @@ sudo systemctl daemon-reload
 
 4. Enable timer
 ```
-sudo systemcl enable --now device-trigger.timer
+sudo systemctl enable --now device-trigger.timer
 ```
 
 #### Debugging
