@@ -21,6 +21,8 @@ parser.add_argument('--list_configs', action='store_true', help="List all camera
 parser.add_argument('--verbose', action='store_true', help="Enable verbose execution")
 args = parser.parse_args()
 
+
+
 if args.list_configs:
     print("#### CAMERA CONFIGS ####")
     for cam_config in list(__CONFIG__["camera_configs"].keys()):
@@ -40,16 +42,17 @@ if args.c is None:
 if args.c is not None:
     for c in args.c:
         if args.verbose:
-            print(f"INFO: Captured an image with [{c[0]}] [{c[1]}]") #TODO: INTEGRATE THIS WITH EXISTING LOGGING PARADIGM 
-        #Update configurations
-        #sbc.update_settings(c[1]) #TODO: Implement a function that passes a dict to the SBC and updates the lighting configuration
-        #camera.update_settings(c[0])
-        #wait for 1 second? (to let the lights adjust)
-        #camera.capture()
+            print(f"INFO: Captured an image with [{c[0]}] [{c[1]}]") 
+            #TODO: INTEGRATE THIS WITH EXISTING LOGGING PARADIGM 
+            #Update configurations
+            #sbc.update_settings(c[1]) #TODO: Implement a function that passes a dict to the SBC and updates the lighting configuration
+            #camera.update_settings(c[0])
+            #wait for 1 second? (to let the lights adjust)
+            #camera.capture()
 else:
     if args.verbose:
-        print(f"INFO: Captured an image with [DEFAULT] [DEFAULT]") #TODO: INTEGRATE THIS WITH EXISTING LOGGING PARADIGM
-
-# Close the camera
-# camera.close() #TODO: Implement a camera shutoff function (maybe we can push a setting that sleeps the sensor?)
-# sbc.close()    #TODO: Implement a function for the SBC that closses the 
+        print(f"INFO: Captured an image with [DEFAULT] [DEFAULT]") 
+        #TODO: INTEGRATE THIS WITH EXISTING LOGGING PARADIGM
+        # Close the camera
+        # camera.close() #TODO: Implement a camera shutoff function (maybe we can push a setting that sleeps the sensor?)
+        # sbc.close()    #TODO: Implement a function for the SBC that closses the 
