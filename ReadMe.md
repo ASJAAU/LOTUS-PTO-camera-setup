@@ -34,7 +34,7 @@ sudo systemctl daemon-reload
 
 5. Enable timer
 ```
-sudo systemctl enable --now device-trigger.timer
+sudo systemctl enable --now lotus-capture.timer
 ```
 
 #### Debugging
@@ -43,14 +43,14 @@ Verify timer is enabled:
 systemctl list-timers --all
 ```
 
-Check device-trigger log
+Check lotus-capture log
 ```
-journalctl -u device-trigger.service
+journalctl -u lotus-capture.service
 ```
 
 Manually trigger service right now
 ```
-sudo systemctl start device-trigger.service
+sudo systemctl start lotus-capture.service
 ```
 
 
