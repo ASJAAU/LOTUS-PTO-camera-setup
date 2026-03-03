@@ -1,16 +1,18 @@
 #include <Arduino.h>
 #include "config.h"
-#include "wifi_manager.h"
-#include "tcp_server.h"
-#include "message_handler.h"
-#include "pwm_controller.h"
+#include "net/network_manager.h"
+#include "net/network_server.h"
+#include "net/message_handler.h"
+#include "resources/pwm_controller.h"
 
 // Import and intialize modules
-static WiFiManager wifi;
+// Global network manager (defined in network_manager.cpp)
 static PwmController pwm;
 static PwmProvider pwmProvider(pwm);
-static TcpServer server(Config::SERVER_PORT);
 static MessageHandler msgHandler;
+// NetServer is created via the NetworkManager at runtime so it can pick the
+// correct transport (WiFi / Ethernet) after the refactor.
+static std::unique_ptr<NetServer> server;
 
 void setup() {
   // Begin Serial (For debugging)
@@ -21,35 +23,56 @@ void setup() {
   // Intialize modules
   pwm.begin(); // Initializes PWM pins
 
-  // start the WIFI connection (This blocks until the device is connected)
-  wifi.begin();
+  // start network transport(s)
+  networkManager.begin();
+
+  // create a server instance bound to the configured port
+  server = networkManager.createServer(Config::SERVER_PORT);
+  if (server) server->begin();
 
   // register providers so MessageHandler can dispatch messages to relevant modules
   msgHandler.addProvider(&pwmProvider);
 
   // start TCP server
-  server.begin();
+  server->begin();
 }
 
 void loop() {
-  digitalWrite(Config::ONBOARD_LED_PIN, HIGH); // Turn debug light on
+  networkManager.loop(); // maintain network state
 
-  wifi.loop(); // Check connection and attempt reconnect if disconnected
-  
-  if (!server.acceptClient()) { // Accept/connect client if necessary
+  if (!server) {
+    // attempt to recreate server if transport changed
+    server = networkManager.createServer(Config::SERVER_PORT);
+    if (server) server->begin();
     delay(10);
-    Serial.println("No client connected yet");
+    Serial.println("Server not available yet");
     return;
   }
- 
-  if (server.hasPacket()) { // If a framed packet is available, read and dispatch to handler
-    Serial.println("Datapacket recieved");
-    String payload = server.readPacket();
-    WiFiClient& client = server.client();
-    msgHandler.handle(payload, client, wifi);
+
+  // Accept an incoming client (returns nullptr if none waiting)
+  std::unique_ptr<NetClient> client = server->available();
+  if (!client) {
+    delay(10);
+    return;
   }
 
-  digitalWrite(Config::ONBOARD_LED_PIN, LOW); // Turn debug light off
+  // Read all available bytes into a payload string and dispatch
+  if (client->available() > 0) {
+    digitalWrite(Config::ONBOARD_LED_PIN, HIGH); // Turn debug light on
+    String payload;
+    while (client->available() > 0) {
+      int c = client->read();
+      if (c < 0) break;
+      payload += (char)c;
+    }
+    Serial.println("Datapacket received");
+    msgHandler.handle(payload, *client, networkManager);
+  }
+  
+  digitalWrite(Config::ONBOARD_LED_PIN, LOW); // Turn debug light off}
+    
+  // Close client when done
+  client->stop();
 
   // slow down cpu by 1 ms to reduce load
   delay(1);

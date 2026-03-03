@@ -1,17 +1,33 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#include <Arduino.h>
+#define TRANSPORT_WIFI // → use onboard WiFi (default)
+// #define TRANSPORT_ETHERNET // → use wired Ethernet (W5x00 / ENC28J60 via SPI)
 
-// Basic configuration values for the project. Replace these with your
-// network credentials and any platform-specific constants.
+#include <Arduino.h>
 namespace Config {
-  // Network configuration
-  static const char* WIFI_SSID = "************";
-  static const char* WIFI_PASS = "************";
+  //-------------------Network configuration-----------------------//
+  //---------------------------------------------------------------//
   constexpr uint16_t SERVER_PORT = 5000;
   const int TIMEOUT_MS = 100000; // connection/reconnection timeout for clients
-  
+
+  // WIFI SPECIFIC CONFIGURATION (Only used when 'COMM_WIFI' is set)
+  static const char* WIFI_SSID = "************";
+  static const char* WIFI_PASS = "************";
+
+  // Ethernet specific configuration (Only used when 'COMM_ETH' is set)
+  static constexpr bool ETH_USE_DHCP = true;
+  static constexpr int ETH_CS_PIN = 5;
+  // Unique MAC address for the Ethernet module.
+  static constexpr uint8_t ETH_MAC[6]  = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }; 
+  // Static IP configuration (ignored when ETH_USE_DHCP == true).
+  static constexpr uint8_t ETH_IP[4]   = { 192, 168,   1, 100 };
+  static constexpr uint8_t ETH_DNS[4]  = {   8,   8,   8,   8 };
+  static constexpr uint8_t ETH_GW[4]   = { 192, 168,   1,   1 };
+  static constexpr uint8_t ETH_MASK[4] = { 255, 255, 255,   0 };
+
+  //-------------------------PWM Resources-------------------------//
+  //---------------------------------------------------------------//
   // LED PWM setup
   constexpr uint32_t LED_PWM_FREQUENCY = 5000; // Hz
   constexpr uint8_t LED_PWM_RESOLUTION = 8; // bits (0-255) WE DO NOT SUPPORT ANY OTHER BIT RESOLUTIONS

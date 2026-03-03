@@ -2,7 +2,7 @@
 #define PWM_CONTROLLER_H
 
 #include <Arduino.h>
-#include "resource_provider.h"
+#include "resources/resource_provider.h"
 #include <ArduinoJson.h>
 
 // Controller interface

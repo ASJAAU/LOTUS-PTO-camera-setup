@@ -2,17 +2,19 @@
 #define MESSAGE_HANDLER_H
 
 #include <Arduino.h>
-#include <WiFi.h>
 #include <vector>
-#include "pwm_controller.h"
-#include "wifi_manager.h"
-#include "resource_provider.h"
+#include "net/network_client.h"
+#include "net/network_manager.h"
+#include "resources/resource_provider.h"
 
 class MessageHandler {
 public:
   MessageHandler();
   void addProvider(ResourceProvider* provider);
-  void handle(const String& payload, WiFiClient& client, WiFiManager& wifi);
+
+  // `client`  — the abstract socket to reply on (WiFi or Ethernet)
+  // `network` — provides status info (IP, SSID, RSSI) for "status" messages
+  void handle(const String& payload, NetClient& client, NetworkManager& network);
 
 private:
   std::vector<ResourceProvider*> _providers;
