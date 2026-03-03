@@ -1,13 +1,13 @@
-#include "tcp_server.h"
+#include "tcp/tcp_server.h"
 #include <Arduino.h>
 
 TcpServer::TcpServer(uint16_t port)
   : _port(port) {
-  // _server is supplied later via begin(std::unique_ptr<INetServer>).
+  // _server is supplied later via begin(std::unique_ptr<NetServer>).
   // This keeps TcpServer decoupled from NetworkManager construction order.
 }
 
-void TcpServer::begin(std::unique_ptr<INetServer> server) {
+void TcpServer::begin(std::unique_ptr<NetServer> server) {
   _server = std::move(server);
   _server->begin();
   Serial.printf("TCP server started on port %u\n", (unsigned)_port);
@@ -15,14 +15,14 @@ void TcpServer::begin(std::unique_ptr<INetServer> server) {
 
 bool TcpServer::acceptClient() {
   // If the existing client has gone away, release it so we can accept anew.
-  if (_client && !_client->connected()) {
+  if (!_client || !_client->connected()) {
     Serial.println("Client disconnected, closing connection");
     _client->stop();
     _client.reset();
   }
 
   if (!_client) {
-    std::unique_ptr<INetClient> incoming = _server->available();
+    std::unique_ptr<NetClient> incoming = _server->available();
     if (!incoming) return false;
     _client = std::move(incoming);
     Serial.println("Client connected");
@@ -31,7 +31,7 @@ bool TcpServer::acceptClient() {
   return true;
 }
 
-INetClient& TcpServer::client() {
+NetClient& TcpServer::client() {
   return *_client;
 }
 
@@ -58,7 +58,7 @@ String TcpServer::readPacket() {
   return payload;
 }
 
-void TcpServer::sendPacket(INetClient& client, const String& payload) {
+void TcpServer::sendPacket(NetClient& client, const String& payload) {
   uint32_t length = payload.length();
   uint8_t header[4] = {
     (uint8_t)((length >> 24) & 0xFF),
