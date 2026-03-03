@@ -14,20 +14,25 @@ We use systemd for service calling and scheduling of the capturing process. That
 #### Initial Setup
 1. Copy service file into linux system
 ```
-mv ./systemd/lotus-capture.service  /etc/systemd/system/device-trigger.service
+sudo mv ./systemd/lotus-capture.service  /etc/systemd/system/lotus-capture.service
 ```
 
 2. Copy timer file into linux system
 ```
-mv ./systemd/lotus-capture.timer /etc/systemd/system/device-trigger.timer
+sudo mv ./systemd/lotus-capture.timer /etc/systemd/system/lotus-capture.timer
 ```
 
-3. Reboot daemon 
+3. Update path to lotus-capture.sh
+```
+sudo nano /etc/systemd/system/lotus-capture.service
+``` 
+
+5. Reboot daemon 
 ```
 sudo systemctl daemon-reload
 ```
 
-4. Enable timer
+5. Enable timer
 ```
 sudo systemctl enable --now device-trigger.timer
 ```
@@ -48,10 +53,6 @@ Manually trigger service right now
 sudo systemctl start device-trigger.service
 ```
 
-
-### If CV2 can't open on ubuntu wayland:
-
-```export QT_QPA_PLATFORM=xcb```
 
 ## Configuration
 ### Default configurations
