@@ -13,4 +13,5 @@ ExecStart=/usr/bin/bash /absolute/path/to/lotus-capture.sh
 User=root
 
 [Install]
-WantedBy=multi-user.target #Execute when OS is stable
+#Execute when OS is stable
+WantedBy=multi-user.target
