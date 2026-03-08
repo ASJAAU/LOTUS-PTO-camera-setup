@@ -1,7 +1,11 @@
 [Unit]
 Description=Trigger PoE Camera and Microcontroller Commands
-Wants=network-online.target # Needs access to a network (PoE cameras or internet) 
-After=network-online.target # Wait for the network to be online
+
+# Needs access to a network (PoE cameras or internet) 
+Wants=network-online.target
+
+# Wait for the network to be online
+After=network-online.target
 
 [Service]
 Type=oneshot
