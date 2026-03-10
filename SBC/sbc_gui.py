@@ -36,6 +36,9 @@ class SBCGui:
 
         self.disconnect_btn = ttk.Button(conn_frame, text="Disconnect", command=self.disconnect, state="disabled")
         self.disconnect_btn.grid(row=0, column=5, padx=4)
+        
+        self.stop_btn = ttk.Button(conn_frame, text="Stop", command=self.stop, state="disabled")
+        self.stop_btn.grid(row=0, column=6, padx=4)
 
         # Middle frame: JSON input and send
         send_frame = ttk.LabelFrame(master, text="JSON Send")
@@ -66,6 +69,8 @@ class SBCGui:
 
         # Start polling queue for logs
         self.master.after(200, self._poll_queue)
+        # Save logs on window close
+        self.master.protocol("WM_DELETE_WINDOW", self._on_close)
 
     def _append_log(self, text: str) -> None:
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -121,6 +126,7 @@ class SBCGui:
         self.connect_btn.config(state="disabled")
         self.disconnect_btn.config(state="normal")
         self.send_btn.config(state="normal")
+        self.stop_btn.config(state="normal")
 
     def disconnect(self) -> None:
         if self.sbc:
@@ -132,6 +138,18 @@ class SBCGui:
         self.connect_btn.config(state="normal")
         self.disconnect_btn.config(state="disabled")
         self.send_btn.config(state="disabled")
+        self.stop_btn.config(state="disabled")
+
+    def stop(self) -> None:
+        if not self.sbc:
+            self._log_queue_put("WARNING: No SBC instance to stop")
+            return
+        try:
+            # Set the internal stop event on the SBC handler
+            self.sbc._stop_event.set()
+            self._log_queue_put("INFO: Stop event set on SBC")
+        except Exception as e:
+            self._log_queue_put(f"ERROR: Setting stop event: {e}")
 
     def send_json(self) -> None:
         if not self.sbc or not self.sbc.is_connected():
@@ -165,6 +183,45 @@ class SBCGui:
         except Exception:
             pass
 
+    def _on_close(self) -> None:
+        # Drain any pending items in the queue
+        drained = []
+        try:
+            while True:
+                drained.append(self.log_queue.get_nowait())
+        except queue.Empty:
+            pass
+
+        # Read visible log text
+        try:
+            log_content = self.log_text.get("1.0", tk.END)
+        except Exception:
+            log_content = ""
+
+        # Write to ./gui-log.txt (append run with timestamp)
+        try:
+            with open("gui-log.txt", "a", encoding="utf-8") as f:
+                f.write(time.strftime("---- GUI Log closed at %Y-%m-%d %H:%M:%S ----\n"))
+                for item in drained:
+                    if isinstance(item, dict):
+                        f.write(json.dumps(item) + "\n")
+                    else:
+                        f.write(str(item) + "\n")
+                f.write("\n")
+                f.write(log_content)
+                f.write("\n")
+        except Exception as e:
+            # Try to log the error to the in-app logger if possible
+            try:
+                self._log_queue_put(f"ERROR: Writing gui-log.txt: {e}")
+            except Exception:
+                pass
+
+        # Finally, destroy the window
+        try:
+            self.master.destroy()
+        except Exception:
+            pass
 
 def main():
     root = tk.Tk()
