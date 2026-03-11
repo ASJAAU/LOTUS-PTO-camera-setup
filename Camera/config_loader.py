@@ -88,7 +88,7 @@ def config_loader(camera, config="config.yaml") -> None:
         "mono10p": "Mono10p",
         "mono12p": "Mono12p",
         "rgb8": "RGB8",
-        "brg8": "BGR8",
+        "bgr8": "BGR8",
         "ycbcr422": "YCbCr422_8",
         "bayer_gr8": "BayerGR8",
         "bayer_rg8": "BayerRG8",

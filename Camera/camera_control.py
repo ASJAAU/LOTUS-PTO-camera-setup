@@ -120,10 +120,10 @@ class CameraControl:
             with self.camera_mutex:
                 self.camera.StartGrabbing(pylon.GrabStrategy_LatestImageOnly)
 
-                # Converter til OpenCV format (fra Basler format til BGR/RGB)
-                converter = pylon.ImageFormatConverter()
-                converter.OutputPixelFormat = pylon.PixelType_BGR8packed
-                converter.OutputBitAlignment = pylon.OutputBitAlignment_MsbAligned
+                # Converter til OpenCV format (fra Basler format til BGR/RGB) (Skal kun bruges ved bayer rg 8)
+                #converter = pylon.ImageFormatConverter()
+                #converter.OutputPixelFormat = pylon.PixelType_BGR8packed
+                #converter.OutputBitAlignment = pylon.OutputBitAlignment_MsbAligned
 
                 print("Live view kører... Tryk på 'q' for at afslutte.")
                 self.logger.info("Live view started.")
@@ -137,8 +137,10 @@ class CameraControl:
 
                     if grabResult.GrabSucceeded():
                         # Konverter billedet til et format OpenCV kan forstå (numpy array)
-                        image = converter.Convert(grabResult)
-                        frame = image.GetArray()
+                        #image = converter.Convert(grabResult)
+                        #frame = image.GetArray()
+
+                        frame = grabResult.Array
 
                         # Calculate FPS
                         current_time = time.time()
@@ -204,6 +206,7 @@ class CameraControl:
             self.logger.info("Camera settings updated.")
         
         except Exception as e:
+            self.logger.error(f"Error updating settings: {e}")
             self.try_reconnect()
     
     def try_reconnect(self):
