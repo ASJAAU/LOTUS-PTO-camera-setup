@@ -1,33 +1,36 @@
 DEFAULT: 
-    camera_config: &default_camera_settings # Default settings that are inherited by all others
-      image_settings:
-        width: 1920                   # Maks er 3548
-        height: 1080                  # Maks er 3552
-        offset_x: 814 
-        offset_y: 1236
-        pixel_format: "bayer_rg8"
-      video_settings:
-        enable_acquisition: "on"
-        acquisition_fps: 30
-      lighting_settings:
-        exposure_time: 15000.0        # mikrosekunder 
-        gain: 1.0
-      auto_settings:
-        auto_brightness_target: 0.5   # Mellem 0.0 og 1.0
-        auto_function: "min_gain"     # "min_gain", eller "min_exposure"
-        auto_exposure: "continuous"   # off, once, continuous
-        auto_exposure_lower_limit: 1.0
-        auto_exposure_upper_limit: 100000.0
-        auto_gain: "continuous"       # off, once, continuous
-        auto_gain_lower_limit: 0
-        auto_gain_upper_limit: 24
-    light_config: &default_light_settings
-      light.1: 128 # Strength in 8bit values (0-255)
-      light.2: 128 # Strength in 8bit values (0-255)
-      light.3: 128 # Strength in 8bit values (0-255
+  camera_config: &default_camera_settings # Default settings that are inherited by all others
+    image_settings:
+      width: 1920                   # Maks er 3548
+      height: 1080                  # Maks er 3552
+      offset_x: 814 
+      offset_y: 1236
+      pixel_format: "bayer_rg8"
+    video_settings:
+      enable_acquisition: "on"
+      acquisition_fps: 30
+    lighting_settings:
+      exposure_time: 15000.0        # mikrosekunder 
+      gain: 1.0
+    auto_settings:
+      auto_brightness_target: 0.5   # Mellem 0.0 og 1.0
+      auto_function: "min_gain"     # "min_gain", eller "min_exposure"
+      auto_exposure: "continuous"   # off, once, continuous
+      auto_exposure_lower_limit: 1.0
+      auto_exposure_upper_limit: 100000.0
+      auto_gain: "continuous"       # off, once, continuous
+      auto_gain_lower_limit: 0
+      auto_gain_upper_limit: 24
+  light_config: &default_light_settings
+    light.1: 128 # Strength in 8bit values (0-255)
+    light.2: 128 # Strength in 8bit values (0-255)
+    light.3: 128 # Strength in 8bit values (0-255
 
 # named hardware cofigurations for individiual rigs
 setups:
+  usb_cam:
+      ip: null
+      settings: *default_camera_settings
   rig1: 
     camera:
       ip: 192.168.10.11
@@ -35,6 +38,7 @@ setups:
       settings: *default_camera_settings
     sbc:
       ip: 127.0.0.101
+      port: 5000
     light:
       settings: *default_light_settings
   rig2:
@@ -44,6 +48,7 @@ setups:
       settings: *default_camera_settings
     sbc:
       ip: 192.168.10.102
+      port: 5000
     light:
       settings: *default_light_settings
   rig3:
@@ -53,6 +58,7 @@ setups:
       settings: *default_camera_settings
     sbc:
       ip: 192.168.10.103
+      port: 5000
     light:
       settings: *default_light_settings
 

@@ -14,12 +14,12 @@ Response:
 
 ### Retrieve a value (`get`)
 Request (get channel 1):
-```{"type": "get",  "get": ["pwm.1"]}```
+```{"type": "get",  "get": ["light.1"]}```
 Response (success):
 ```{"type": "response", "success": true, "value": 0}```
 
 Request (get channel 1 and channel 2):
-```{"type": "get",  "get": ["pwm.1", "pwm.2"]}```
+```{"type": "get",  "get": ["light.1", "light.2"]}```
 Response (success):
 ```{"type": "response", "success": true, "value": 0}```
 ```{"type": "response", "success": true, "value": 0}```
@@ -31,9 +31,9 @@ Error (unknown key):
 ### Set values (`set`)
 *Note:* Setter commands can have nested json objects allowing to set multiple objects at a time, the microcontroller will process them sequentially 
 Request (set channel 1):
-```{"type": "set", "set": {"pwm.1": 128}}```
+```{"type": "set", "set": {"light.1": 128}}```
 Response (success):
-```{"type": "response", "success": true, "result": "pwm.1 set"}```
+```{"type": "response", "success": true, "result": "light.1 set"}```
 
 Request (set all channels):
 ```{"type": "set", "set": { "pwm": 200 }}```
@@ -42,10 +42,10 @@ Response (success):
 
 
 Request (set channel 1 and channel 2):
-```{"type": "set", "set": {"pwm.1": 128, "pwm.2": 128}}```
+```{"type": "set", "set": {"light.1": 128, "light.2": 128}}```
 Response:
-```{"type": "response", "success": true, "result": "pwm.1 set"}```
-```{"type": "response", "success": true, "result": "pwm.2 set"}```
+```{"type": "response", "success": true, "result": "light.1 set"}```
+```{"type": "response", "success": true, "result": "light.2 set"}```
 
 Error (unknown set key):
 ```{"type": "response", "success": false, "error": "unknown set key", "value": "the-offending-key"}```
@@ -53,12 +53,18 @@ Error (unknown set key):
 
 ### Run specific function / command (`cmd`)
 Request (run a named command):
-```{"type": "cmd", "cmd": "pwmTest"}```
+```{"type": "cmd", "cmd": "lightTest"}```
 Response (success):
 ```{"type": "response", "success": true, "result": "pwmTest started"}```
 Response (unknown cmd):
 ```{"type": "response", "success": false, "error": "unknown cmd", "value": "badcmd"}
 ```
+Valid commands:
+```{"type": "cmd", "cmd": "lightTest"}```
+```{"type": "cmd", "cmd": "lightOff"}```
+```{"type": "cmd", "cmd": "lightOn"}```
+```{"type": "cmd", "cmd": "wipe"}```
+
 
 ## Errors
 ### Unknown message type

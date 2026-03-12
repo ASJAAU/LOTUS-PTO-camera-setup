@@ -1,25 +1,49 @@
 from pypylon import pylon
-import cv2, time, threading, os, logging
+import cv2, time, threading, os, logging, yaml
 
 from Camera.config_loader import config_loader
 
 
 class CameraControl:
-    def __init__(self, auto_interval=None) -> None:
-        self.camera = pylon.InstantCamera(
-            pylon.TlFactory.GetInstance().CreateFirstDevice()
-        )
+    def __init__(self, config=None, ip=None, interval=None, logger=None) -> None:
+        #Instansiate logger or accept passed logger
+        if logger:
+            self.logger = logger
+        else:
+            self.logger = logging.getLogger(__name__)
+
+        #Mark initiation
+        self.logger.info(f"Camera Controller {ip}")
+
+        # Get camera
+        if ip is None: #If not IP specified get first available device
+            self.camera = pylon.InstantCamera(pylon.TlFactory.GetInstance().CreateFirstDevice())
+        else:
+            device_info = pylon.DeviceInfo()
+            device_info.SetPropertyValue("IpAddress", ip)
+            tl_factory = pylon.TlFactory.GetInstance()
+            device = tl_factory.CreateFirstDevice(device_info)
+            self.camera = pylon.InstantCamera(device)
+            if self.camera is None:
+                self.logger.error(f"No camera found at ip: {ip}")
+                self.close()
+                return None
+
+        # Open cammera
         self.camera.Open()
         self.camera_mutex = threading.Lock()
 
-        self.logger = logging.getLogger(__name__)
-        self.update_settings()
+        # Setup config
+        if config:
+            self.update_settings(config)
+        else:
+            self.logger.warning(f"Camera config not provided, using factory camera configuration")
 
-        for folder in ["./User_images", "./Captured_images"]:
+        for folder in ["./Captured_images"]:
             os.makedirs(folder, exist_ok=True)
 
-        if auto_interval is not None:
-            self.run_in_thread(self.auto_pic_snapper, auto_interval)
+        if interval is not None:
+            self.run_in_thread(self.auto_pic_snapper, interval)
 
     def snap_pic(self, user: bool = False) -> None:
         """
@@ -53,7 +77,7 @@ class CameraControl:
                         if user_input == "s":
                             timestamp = time.strftime("%Y%m%d-%H%M%S")
                             filename = f"image_{timestamp}.png"
-                            full_path = os.path.join("./User_images", filename)
+                            full_path = os.path.join("./Captured_images", filename)
                             cv2.imwrite(full_path, img)
                             self.logger.info(f"User saved image as {full_path}")
 
@@ -168,19 +192,20 @@ class CameraControl:
         
         while True:
             self.snap_pic(user=False)
+            self.logger.info(f"Captured image at: {time.strftime("%Y%m%d-%H%M%S")}")
             time.sleep(interval)
 
-    def update_settings(self) -> None:
+    def update_settings(self, config) -> None:
         """Loads camera settings from config file."""
 
         try:
-            config_loader(self.camera)
+            self.last_config = config
+            self.load_config(config)
             self.logger.info("Camera settings updated.")
         
         except Exception as e:
             self.try_reconnect()
     
-
     def try_reconnect(self):
         """Attempts to re-open the camera if lost."""
 
@@ -190,12 +215,126 @@ class CameraControl:
         )
             self.camera.Close()
             self.camera.Open()
-            self.update_settings()
+            self.update_settings(self.last_config)
             self.logger.info("Camera reconnected successfully.")
 
         except Exception as e:
             self.logger.error(f"Reconnection failed: {e}")
 
+    def close(self):
+        if hasattr(self, "camera") and self.camera.IsOpen():
+            camera_control.camera.Close()
+        self.logger.info("Stopped")
+
+    def load_config(self, config):
+        # Convert string to dict
+        if type(config) == str:
+            with open(config, "r") as file:
+                self.config = yaml.safe_load(file)["DEFAULT"]["camera_config"]
+        elif type(config) == dict: #Assume correct dict and continue
+            self.config = config
+        else:
+            self.logger.error(f"Inappropriate config type ('{type(config)}')")
+            raise TypeError(f"Inappropriate config type ('{type(config)}'), must be of type 'str' or 'dict'")
+            
+
+        image_settings = self.config["image_settings"]
+        video_settings = self.config["video_settings"]
+        lighting_settings = self.config["lighting_settings"]
+        auto_settings = self.config["auto_settings"]
+
+        # Image settings
+        self.camera.Width.Value = image_settings["width"]
+        self.camera.Height.Value = image_settings["height"]
+        self.camera.OffsetX.Value = image_settings["offset_x"]
+        self.camera.OffsetY.Value = image_settings["offset_y"]
+
+        self.camera.ExposureTime.Value = lighting_settings["exposure_time"]
+        self.camera.Gain.Value = lighting_settings["gain"]
+
+        # Video settings
+        enable_acquisition = video_settings["enable_acquisition"].lower()
+        if enable_acquisition == "on":
+            self.camera.AcquisitionFrameRateEnable.Value = True
+            self.camera.AcquisitionFrameRate.Value = video_settings["acquisition_fps"]
+        elif enable_acquisition == "off":
+            self.camera.AcquisitionFrameRateEnable.Value = False
+        else:
+            raise ValueError("Invalid enable_acquisition value in config.yaml")
+
+        # Auto settings
+        self.camera.AutoTargetBrightness.Value = auto_settings["auto_brightness_target"]
+
+        auto_exposure = auto_settings["auto_exposure"].lower()
+        if auto_exposure == "off":
+            self.camera.ExposureAuto.Value = "Off"
+        elif auto_exposure == "once":
+            self.camera.ExposureAuto.Value = "Once"
+        elif auto_exposure == "continuous":
+            self.camera.ExposureAuto.Value = "Continuous"
+        else:
+            raise ValueError("Invalid auto_exposure value in config.yaml")
+
+        self.camera.AutoExposureTimeLowerLimit.Value = auto_settings["auto_exposure_lower_limit"]
+        self.camera.AutoExposureTimeUpperLimit.Value = auto_settings["auto_exposure_upper_limit"]
+
+        auto_function = auto_settings["auto_function"].lower()
+        if auto_function == "min_gain":
+            self.camera.AutoFunctionProfile.Value = "MinimizeGain"
+        elif auto_function == "min_exposure":
+            self.camera.AutoFunctionProfile.Value = "MinimizeExposureTime"
+        else:
+            raise ValueError("Invalid auto_function value in config.yaml")
+
+        auto_gain = auto_settings["auto_gain"].lower()
+        if auto_gain == "off":
+            self.camera.GainAuto.Value = "Off"
+        elif auto_gain == "once":
+            self.camera.GainAuto.Value = "Once"
+        elif auto_gain == "continuous":
+            self.camera.GainAuto.Value = "Continuous"
+        else:
+            raise ValueError("Invalid auto_gain value in config.yaml")
+
+        self.camera.AutoGainLowerLimit.Value = auto_settings["auto_gain_lower_limit"]
+        self.camera.AutoGainUpperLimit.Value = auto_settings["auto_gain_upper_limit"]
+
+        # Pixel format
+        pixel_format_mapping = {
+            "mono8": "Mono8",
+            "mono10": "Mono10",
+            "mono10p": "Mono10p",
+            "mono12p": "Mono12p",
+            "rgb8": "RGB8",
+            "brg8": "BGR8",
+            "ycbcr422": "YCbCr422_8",
+            "bayer_gr8": "BayerGR8",
+            "bayer_rg8": "BayerRG8",
+            "bayer_gb8": "BayerGB8",
+            "bayer_bg8": "BayerBG8",
+            "bayer_gr10": "BayerGR10",
+            "bayer_rg10": "BayerRG10",
+            "bayer_gb10": "BayerGB10",
+            "bayer_bg10": "BayerBG10",
+            "bayer_gr10p": "BayerGR10p",
+            "bayer_rg10p": "BayerRG10p",
+            "bayer_gb10p": "BayerGB10p",
+            "bayer_bg10p": "BayerBG10p",
+            "bayer_gr12": "BayerGR12",
+            "bayer_rg12": "BayerRG12",
+            "bayer_gb12": "BayerGB12",
+            "bayer_bg12": "BayerBG12",
+            "bayer_gr12p": "BayerGR12p",
+            "bayer_rg12p": "BayerRG12p",
+            "bayer_gb12p": "BayerGB12p",
+            "bayer_bg12p": "BayerBG12p",
+        }
+
+        pixel_format = image_settings["pixel_format"].lower()
+        if pixel_format in pixel_format_mapping:
+            camera.PixelFormat.Value = pixel_format_mapping[pixel_format]
+        else:
+            raise ValueError("Invalid pixel_format value in config.yaml")
 
     @staticmethod
     def run_in_thread(func, *args) -> threading.Thread:
@@ -205,9 +344,8 @@ class CameraControl:
         thread.start()
         return thread
 
-
 if __name__ == "__main__":
-    camera_control = CameraControl()
+    camera_control = CameraControl("./config.yaml")
 
     try:
         while True:
@@ -219,13 +357,11 @@ if __name__ == "__main__":
             elif user_input == "s":
                 camera_control.stream()
             elif user_input == "u":
-                camera_control.update_settings()
+                camera_control.update_settings("./config.yaml")
             elif user_input == "q":
                 break
             else:
                 print("Invalid input. Please try again.")
 
     finally:
-        print("Lukker kameraet")
-        if hasattr(camera_control, "camera") and camera_control.camera.IsOpen():
-            camera_control.camera.Close()
+        camera_control.close()
