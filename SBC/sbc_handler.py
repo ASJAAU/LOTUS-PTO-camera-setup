@@ -72,9 +72,18 @@ class SBC:
     def is_connected(self) -> bool:
         return self._connected
     
-    # For sending commands to SBC
-    def update_settings(self, settings: dict) -> None:
-        self.send({"set":settings}) #PLACEHOLDER UNTIL COMMUNICATION FORMAT HAS BEEN DECIDED
+    # For setting parameters on SBC
+    def set_values(self, keyvals: dict) -> None:
+        for key, value in keyvals.items():
+         self.send({"set": {key: value}})
+    
+    # For getting parameter values from SBC
+    def get_values(self, keyvals: dict) -> None:
+        for key, value in keyvals.items():
+         self.send({"get": {key: value}})
+
+    def send_command(self, cmd) -> None:
+        self.send({"cmd": {"cmd": cmd}})
 
     #### PRIVATE FUNCTIONS
     # Message functions
@@ -182,3 +191,40 @@ class SBC:
         if self._socket:
             self._socket.close()
         self.connect()
+
+
+if __name__ == "__main__":
+    ip = input("SBC IP address:")
+    sbc = SBC(ip, 5000, verbose=True)
+    sbc.set_logger_callback(on_message)
+    try:
+        print("Connecting to SBC...")
+        sbc.connect()
+        print("Connected. Enter JSON messages to send. Type 'quit' or Ctrl-C to exit.")
+
+        while True:
+            try:
+                line = input("> ").strip()
+            except EOFError:
+                break
+
+            if not line:
+                continue
+            if line.lower() in ("quit", "exit"):
+                break
+
+            try:
+                payload = json.loads(line)
+            except json.JSONDecodeError as e:
+                print(f"Invalid JSON: {e}")
+                continue
+
+            try:
+                sbc.send(payload)
+                print("Sent")
+            except Exception as e:
+                print(f"Send failed: {e}")
+    except KeyboardInterrupt:
+        print("\nInterrupted by user")
+    finally:
+        sbc.disconnect()
