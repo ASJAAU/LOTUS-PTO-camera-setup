@@ -15,9 +15,6 @@ class Main:
 
         self.check_for_input()
 
-        # self.tui = DashboardApp(self)
-        # self.tui.run()
-
     def logging_setup(self) -> logging.Logger:
         logging.basicConfig(
             level=logging.INFO,
