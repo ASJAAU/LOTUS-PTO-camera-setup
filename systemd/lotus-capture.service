@@ -13,7 +13,8 @@ StartLimitBurst=3
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/bash /absolute/path/to/lotus-capture.sh
+WorkingDirectory=/home/aau/LOTUS-PTO_studentwork
+ExecStart=./systemd/lotus-capture.sh
 User=root
 
 # Retry on failure (wait 10 seconds)
