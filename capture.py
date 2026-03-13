@@ -34,7 +34,7 @@ if args.list_configs:
 
 # Get setup specific config
 rig = __CONFIG__["setups"][args.rig]
-capture_logger.info("Beginning image acquisition")
+capture_logger.info(f"Beginning image acquisition: {args.rig}")
 
 #Check and report of 
 if args.c is None:
