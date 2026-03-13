@@ -7,19 +7,16 @@ Wants=network-online.target
 # Wait for the network to be online
 After=network-online.target
 
-# Allow only 3 restart attempts within a 5 minute window (300s)
-StartLimitIntervalSec=300
-StartLimitBurst=3
-
 [Service]
 Type=oneshot
 WorkingDirectory=/home/aau/LOTUS-PTO_studentwork
-ExecStart=./systemd/lotus-capture.sh
+ExecStart=/home/aau/LOTUS-PTO_studentwork/systemd/lotus-capture.sh
 User=root
 
 # Retry on failure (wait 10 seconds)
 Restart=on-failure
 RestartSec=10
+StartLimitIntervalSec=0
 
 [Install]
 #Execute when OS is stable
