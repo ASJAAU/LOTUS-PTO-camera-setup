@@ -3,15 +3,10 @@ import json
 import struct
 import threading
 import time
+import logging
+import traceback
 from typing import Optional, Callable
 
-def on_message(msg):
-    # TO BE IMPLEMENTED
-    # Placeholder prints mesages into the terminal
-    on_message_print(msg)
-
-def on_message_print(msg):
-    print("Recieved: ", msg)    
 class SBC:
     def __init__(self, ip, port, timeout=5, buffer_size=1024, reconnect_interval=5, heartbeat_interval=10, log_level=1, name="NA", verbose=False) -> None:
         self.name = name
@@ -30,15 +25,20 @@ class SBC:
         self._receiver_thread = None
         self._heartbeat_thread = None
         self._stop_event = threading.Event()
-        self._logger_callback: Optional[Callable[[dict], None]] = None
+
+        # Setup logger
+        self.logger = logging.getLogger(__name__)
+        logging.basicConfig(
+            level=logging.INFO,
+            format="[%(levelname)s] (%(name)s) %(message)s"
+        )
 
     #### PUBLIC FUNCTIONS
     # Connection Management
     def connect(self) -> None:
         while not self._stop_event.is_set():
             try:
-                if self._logger_callback:
-                    self._logger_callback(f"INFO: Attempting connection to {self.name}: {self.ip}:{self.port}") 
+                self.logger.info(f"Attempting connection to {self.name}: {self.ip}:{self.port}") 
 
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 sock.settimeout(self.timeout)
@@ -48,18 +48,12 @@ class SBC:
                 self._socket = sock
                 self._connected = True
 
-                if self.verbose:
-                    print(f"INFO: Connection to {self.name} successful")
-                if self._logger_callback:
-                    self._logger_callback(f"INFO: Connection to {self.name} successful")
+                self.logger.info(f"INFO: Connection to {self.name} successful")
 
                 self._start_background_threads()
                 return
             except Exception as e:
-                if self.verbose:
-                    print(f"INFO: Connection to {self.name} failed, retrying in {self.reconnect_interval} seconds.")
-                if self._logger_callback:
-                    self._logger_callback(f"INFO: Connection to {self.name} failed, retrying in {self.reconnect_interval} seconds.")
+                self.logger.info(f"INFO: Connection to {self.name} failed, retrying in {self.reconnect_interval} seconds.")
                 time.sleep(self.reconnect_interval)
 
     def disconnect(self) -> None:
@@ -103,7 +97,7 @@ class SBC:
 
             # sanity check against malicious or corrupt lengths
             if length <= 0 or length > 10_000:
-                print(f"Invalid message length: {length}")
+                self.logger.error(f"Invalid message length: {length}")
                 return None
 
             body = self._recv_exact(length)
@@ -111,13 +105,14 @@ class SBC:
             try:
                 return json.loads(body.decode("utf-8"))
             except json.JSONDecodeError:
-                print("Malformed JSON received — dropping frame")
+                self.logger.error(f"Malformed JSON received — dropping frame")
                 return None
         except socket.error:
             # Real transport failure
-            raise
+            self.logger.error(f"Socket Error")
+            return None
         except Exception as e:
-            print(f"Unexpected receive error: {e}")
+            self.logger.error(f"Unexpected receive error: {e}")
             return None
             
     def _recv_exact(self, size: int) -> bytes:
@@ -125,20 +120,17 @@ class SBC:
         while len(data) < size:
             chunk = self._socket.recv(size - len(data))
             if not chunk:
-                raise ConnectionError("Socket closed")
+                self.logger.error(f"Unable to recieve data -Socket closed")
             data += chunk
         return data
 
     def send(self, payload: dict) -> None:
         if not self._connected:
-            raise ConnectionError("Not connected")
+            self.logger.error(f"Unable to send message - Not connected")
         try:
             self._send_framed(payload)
         except Exception:
             self._handle_disconnect()
-
-    def set_logger_callback(self, callback: Callable[[dict], None]) -> None:
-        self._logger_callback = callback
 
     # Background Threads
     def _start_background_threads(self) -> None:
@@ -160,14 +152,11 @@ class SBC:
                 message = self._receive_framed()
 
                 if message is None:
-                    self._logger_callback("WARNING: Recieved empty message")
+                    self.logger.warning(f"Recieved empty message")
                     continue  # just drop bad frame
 
                 if message.get("type") == "pong":
                     continue  # heartbeat reply
-
-                if self._logger_callback:
-                    self._logger_callback(message)
 
             except (ConnectionError, socket.error):
                 # Only reconnect on REAL transport failure
@@ -186,17 +175,16 @@ class SBC:
 
     def _handle_disconnect(self) -> None:
         if self._connected:
-            print("Disconnected. Reconnecting...")
+            self.logger.error(f"Disconnected. Reconnecting...")
         self._connected = False
         if self._socket:
             self._socket.close()
         self.connect()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":   
     ip = input("SBC IP address:")
     sbc = SBC(ip, 5000, verbose=True)
-    sbc.set_logger_callback(on_message)
     try:
         print("Connecting to SBC...")
         sbc.connect()

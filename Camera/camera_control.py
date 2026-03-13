@@ -14,6 +14,10 @@ class CameraControl:
 
         #Mark initiation
         self.logger.info(f"Camera Controller {ip}")
+        logging.basicConfig(
+            level=logging.INFO,
+            format="[%(levelname)s] (%(name)s) %(message)s"
+        )
 
         # Get camera
         if ip is None: #If not IP specified get first available device
