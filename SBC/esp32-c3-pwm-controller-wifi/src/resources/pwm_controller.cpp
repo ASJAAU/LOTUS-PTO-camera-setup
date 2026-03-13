@@ -82,11 +82,14 @@ void PwmController::lightOn() {
 void PwmController::wipe(){
   //Implement wiping feature
   for (uint8_t i = 0; i < NUM_WIPERS; ++i) {
-  setChannel(WIPER_CHANNELS[i], 128); // Wipe to left
-  delay(1000); // Wait wait
-  setChannel(WIPER_CHANNELS[i], 128); // Wipe to the right
-  delay(1000); // Wait wait
-  setChannel(WIPER_CHANNELS[i], 0); // Stop wiping real smooth
+    for (uint8_t a = 0; a <= 180; a++){
+      setChannel(WIPER_CHANNELS[i], a);
+      delay(20); // Wait wait
+    }
+    for (uint8_t a = 180; a >= 0 a--){
+      setChannel(WIPER_CHANNELS[i], a);
+      delay(20); // Wait wait
+    }
   }
 }
 
