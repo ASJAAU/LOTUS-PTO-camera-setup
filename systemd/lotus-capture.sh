@@ -11,4 +11,4 @@ echo "ROUTINE: Started routine capture service at: $(date '+%Y-%m-%d-%H-%M-%S')"
 source venv/bin/activate
 
 # Run commands
-./venv/bin/python3 snap_pic.py >> "$LOGFILE" 2>&1
+./venv/bin/python3 capture.py >> "$LOGFILE" 2>&1
