@@ -29,6 +29,7 @@ DEFAULT:
 # named hardware cofigurations for individiual rigs
 setups:
   usb_cam:
+    camera:
       ip: null
       settings: *default_camera_settings
   rig1: 
