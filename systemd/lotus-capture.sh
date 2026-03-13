@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Setup log dir
-LOGDIR="./logs"
+LOGDIR="/home/aau/LOTUS-PTO_studentwork/logs"
 mkdir -p "$LOGDIR"
 LOGFILE="$LOGDIR/$(date +%Y-%m-%d).log"
 

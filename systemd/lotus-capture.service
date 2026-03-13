@@ -1,5 +1,6 @@
 [Unit]
 Description=Trigger PoE Camera and Microcontroller Commands
+StartLimitIntervalSec=0
 
 # Needs access to a network (PoE cameras or internet) 
 Wants=network-online.target
@@ -16,7 +17,6 @@ User=root
 # Retry on failure (wait 10 seconds)
 Restart=on-failure
 RestartSec=10
-StartLimitIntervalSec=0
 
 [Install]
 #Execute when OS is stable
